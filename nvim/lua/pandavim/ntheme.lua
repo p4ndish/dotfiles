@@ -1,0 +1,4 @@
+-- require("tokyonight").setup({
+--     style = 'light',
+--     light_style = 'day',
+-- })
