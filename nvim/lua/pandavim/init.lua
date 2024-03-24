@@ -1,10 +1,10 @@
 require("pandavim.remap")
+require("pandavim.packer")
 require("pandavim.lsp")
+require("pandavim.telescope")
 require("pandavim.treesitter")
 require("pandavim.ntheme")
-require("pandavim.telescope")
 require("pandavim.flutter_Tool")
-require("pandavim.packer")
 
 
 -- print("hello from custom file")

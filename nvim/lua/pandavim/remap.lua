@@ -16,9 +16,9 @@ vim.opt.termguicolors = true
 -- custom mappings 
 vim.keymap.set("i", "<leader>q", "<Esc>")
 vim.keymap.set("n", "<leader>pv", vim.cmd.Ex)
--- copy reserver 
-vim.keymap.set("x", "<leader>p", "\"_dP")
+vim.keymap.set({"x", "n", }, "<leader>p", "\"_dP")
 -- commenting from insert mode 
+ 
 vim.keymap.set({"n", "x"}, "<leader>r\"", ':s/\\%V.*\\%V/"&"/<CR>')
 vim.keymap.set({"n", "x"}, "<leader>r'", ":s/\\%V.*\\%V/'&'/<CR>")
 vim.keymap.set({"n", "x"}, "<leader>r[", ":s/\\%V.*\\%V/[&]/<CR>")
@@ -86,3 +86,12 @@ vim.api.nvim_create_autocmd('LspAttach', {
     end, opts)
   end,
 })
+
+
+
+
+
+vim.api.nvim_set_keymap('n', '<leader>la', ':Laravel artisan<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>lr', ':Laravel routes<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>lm', ':Laravel related<CR>', { noremap = true, silent = true })
+
