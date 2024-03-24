@@ -120,4 +120,6 @@ return require('packer').startup(function(use)
     }
 
     use 'romgrk/barbar.nvim'
+    use { 'mrjones2014/smart-splits.nvim', build = './kitty/install-kittens.bash' }
+
 end)
