@@ -1,0 +1,4 @@
+#!/bin/bash 
+# Creates a laravel project for specific version of laravel 
+# ./laravel_installer $version $project_name
+composer create-project --prefer-dist laravel/laravel:^$1 $2
