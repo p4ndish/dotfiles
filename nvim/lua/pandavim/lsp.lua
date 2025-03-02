@@ -146,3 +146,5 @@ lspconfig.blade.setup{
   -- Capabilities is specific to my setup.
   capabilities = capabilities
 }
+
+-- require("laravel.run").setup({})

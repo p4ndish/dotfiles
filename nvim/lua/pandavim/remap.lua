@@ -8,26 +8,17 @@ vim.opt.tabstop = 4
 vim.opt.softtabstop = 4 
 vim.opt.shiftwidth = 4 -- Replace 4 with your desired tab width
 vim.opt.expandtab = true
-vim.opt.smartindent = true 
+-- vim.opt.smartindent = true 
 vim.opt.hlsearch = false 
 vim.opt.termguicolors = true 
-
+vim.keymap.set('n', '<C-a>', ':<C-u>normal! ggVG<CR>', {noremap = true, silent = true})
 -- custom mappings for spliting files
 -- vim.keymap.set({"n"}, "<leader>vs", vim.cmd.vsplit, opt  ) 
 -- recommended mappings
 -- resizing splits
 -- these keymaps will also accept a range,
 -- for example `10<A-h>` will `resize_left` by `(10 * config.default_amount)`
-vim.keymap.set('n', '<A-h>', require('smart-splits').resize_left)
-vim.keymap.set('n', '<A-j>', require('smart-splits').resize_down)
-vim.keymap.set('n', '<A-k>', require('smart-splits').resize_up)
-vim.keymap.set('n', '<A-l>', require('smart-splits').resize_right)
 -- moving between splits
-vim.keymap.set('n', '<C-h>', require('smart-splits').move_cursor_left)
-vim.keymap.set('n', '<C-j>', require('smart-splits').move_cursor_down)
-vim.keymap.set('n', '<C-k>', require('smart-splits').move_cursor_up)
-vim.keymap.set('n', '<C-l>', require('smart-splits').move_cursor_right)
-vim.keymap.set('n', '<C-\\>', require('smart-splits').move_cursor_previous)
 -- swapping buffers between windows
 vim.keymap.set('n', '<leader><leader>h', require('smart-splits').swap_buf_left)
 vim.keymap.set('n', '<leader><leader>j', require('smart-splits').swap_buf_down)
@@ -62,6 +53,8 @@ vim.keymap.set({"n", "x"}, "<leader>r(", ":s/\\%V.*\\%V/(&)/<CR>")
 vim.keymap.set({"n", "x"}, "<leader>//", ":s/^/\\/\\/ /<CR>")
 vim.keymap.set({"n", "x"}, "<leader>/#", ":s/^/# /<CR>")
 
+vim.keymap.set({"n", "x"}, "<leader>r{{", ":s/\\%V.*\\%V/{{--&--}}/<CR>")
+vim.keymap.set({"n", "x"}, "<leader>r}}", ":s/\\%V.*\\%V/{{--&--}}/<CR>")
 
 local builtin = require('telescope.builtin')
 vim.keymap.set('n', '<leader>ff', builtin.find_files, {})
@@ -136,3 +129,16 @@ vim.api.nvim_set_keymap('n', '<leader>lm', ':Laravel related<CR>', { noremap = t
 -- custom filetree commands 
 vim.g.mapleader = " "
 vim.keymap.set("n", "<leader>fo", vim.cmd.NvimTreeToggle, {silent = true})
+-- custom split movments 
+vim.keymap.set('n', '<C-l>', require('smart-splits').move_cursor_left)
+vim.keymap.set('n', '<C-j>', require('smart-splits').move_cursor_down)
+vim.keymap.set('n', '<C-k>', require('smart-splits').move_cursor_up)
+vim.keymap.set('n', '<C-h>', require('smart-splits').move_cursor_right)
+vim.keymap.set('n', '<C-\\>', require('smart-splits').move_cursor_previous)
+
+-- custom split resize movment 
+
+vim.keymap.set('n', '<S-A-h>', require('smart-splits').resize_left)
+vim.keymap.set('n', '<S-A-j>', require('smart-splits').resize_down)
+vim.keymap.set('n', '<S-A-k>', require('smart-splits').resize_up)
+vim.keymap.set('n', '<S-A-l>', require('smart-splits').resize_right)

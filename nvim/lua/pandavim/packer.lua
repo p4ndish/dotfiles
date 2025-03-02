@@ -4,6 +4,7 @@ if vim.fn.empty(vim.fn.glob(install_path)) > 0 then
     vim.cmd('!git clone https://github.com/wbthomason/packer.nvim '..install_path)
 end
 
+
 vim.cmd('autocmd BufWritePost plugins.lua PackerCompile')
 -- Only required if you have packer configured as `opt`
 
@@ -99,12 +100,15 @@ return require('packer').startup(function(use)
 
     use {
         'adalessa/laravel.nvim',
+        
         requires = {
             'nvim-telescope/telescope.nvim',
             'tpope/vim-dotenv',
             'MunifTanjim/nui.nvim',
             'nvim-lua/plenary.nvim' -- Required by none-ls.nvim
         },
+        lazy = true,
+        config = true,
         cmd = { "Sail", "Artisan", "Composer", "Npm", "Yarn", "Laravel" },
     }
 
@@ -114,12 +118,29 @@ return require('packer').startup(function(use)
         'nvim-tree/nvim-tree.lua',
         requires = {
             'nvim-tree/nvim-web-devicons',
-            'nvim-tree/nvim-web-devicons', -- optional
         },
 
     }
 
     use 'romgrk/barbar.nvim'
-    use { 'mrjones2014/smart-splits.nvim', build = './kitty/install-kittens.bash' }
+    use { 'mrjones2014/smart-splits.nvim' }
 
+    use "nvim-lua/plenary.nvim" -- don't forget to add this one if you don't have it yet!
+    use {
+        "ThePrimeagen/harpoon",
+        branch = "harpoon2",
+        requires = { {"nvim-lua/plenary.nvim"} }
+    }
+    use {'yaegassy/coc-blade', {run = "yarn install --frozen-lockfile"} }
+    use {
+    's1n7ax/nvim-terminal',
+    config = function()
+        vim.o.hidden = true
+        require('nvim-terminal').setup()
+    end,
+}
+    use 'Darazaki/indent-o-matic'
+
+
+    use "EmranMR/tree-sitter-blade"
 end)

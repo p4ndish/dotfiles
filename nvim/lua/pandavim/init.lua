@@ -5,6 +5,9 @@ require("pandavim.telescope")
 require("pandavim.treesitter")
 require("pandavim.ntheme")
 require("pandavim.tabconfig")
+require("pandavim.tabine")
+require("pandavim.harpoon")
+require("pandavim.filetree")
 require("pandavim.flutter_Tool")
 
 
