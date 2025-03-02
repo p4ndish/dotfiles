@@ -1,4 +1,5 @@
 local lsp_zero = require('lsp-zero')
+
 local lsp_config = require("lspconfig")
 local dartExcludedFolders = {
     vim.fn.expand("$HOME/AppData/Local/Pub/Cache"),
@@ -112,13 +113,36 @@ require('mason-lspconfig').setup({
 
 
 
--- require("nvim-lsp-installer").setup({
---     automatic_installation = true, -- automatically detect which servers to install (based on which servers are set up via lspconfig)
---     ui = {
---         icons = {
---             server_installed = "✓",
---             server_pending = "➜",
---             server_uninstalled = "✗"
---         }
---     }
--- })
+require("nvim-lsp-installer").setup({
+    automatic_installation = true, -- automatically detect which servers to install (based on which servers are set up via lspconfig)
+    ui = {
+        icons = {
+            server_installed = "✓",
+            server_pending = "➜",
+            server_uninstalled = "✗"
+        }
+    }
+})
+
+
+
+local lspconfig = require'lspconfig'
+local configs = require 'lspconfig.configs'
+
+-- Configure it
+configs.blade = {
+  default_config = {
+    -- Path to the executable: laravel-dev-generators
+    cmd = { "laravel-dev-generators", "lsp" },
+    filetypes = {'blade'};
+    root_dir = function(fname)
+      return lspconfig.util.find_git_ancestor(fname)
+    end;
+    settings = {};
+  };
+}
+-- Set it up
+lspconfig.blade.setup{
+  -- Capabilities is specific to my setup.
+  capabilities = capabilities
+}

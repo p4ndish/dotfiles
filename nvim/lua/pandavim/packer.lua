@@ -1,11 +1,12 @@
 -- This file can be loaded by calling `lua require('plugins')` from your init.vim
-
 local install_path = vim.fn.stdpath('data')..'/site/pack/packer/start/packer.nvim'
 if vim.fn.empty(vim.fn.glob(install_path)) > 0 then
     vim.cmd('!git clone https://github.com/wbthomason/packer.nvim '..install_path)
 end
+
 vim.cmd('autocmd BufWritePost plugins.lua PackerCompile')
 -- Only required if you have packer configured as `opt`
+
 vim.cmd [[packadd packer.nvim]]
 return require('packer').startup(function(use)
     -- Packer can manage itself
@@ -107,5 +108,18 @@ return require('packer').startup(function(use)
         cmd = { "Sail", "Artisan", "Composer", "Npm", "Yarn", "Laravel" },
     }
 
+    use { 'codota/tabnine-nvim', run = "./dl_binaries.sh" }
+
+    use {
+        'nvim-tree/nvim-tree.lua',
+        requires = {
+            'nvim-tree/nvim-web-devicons',
+            'nvim-tree/nvim-web-devicons', -- optional
+        },
+
+    }
+
+    use 'romgrk/barbar.nvim'
+    use { 'mrjones2014/smart-splits.nvim', build = './kitty/install-kittens.bash' }
 
 end)
