@@ -1,0 +1,71 @@
+#!/bin/bash
+# installs php and nodejs 
+# Exit immediately if a command exits with a non-zero status
+set -e
+
+# Function to display messages
+function info {
+    echo -e "\e[34m[INFO]\e[0m $1"
+}
+
+# Update package lists
+info "Updating package lists..."
+sudo apt update -y
+
+# Install prerequisites
+info "Installing prerequisites..."
+sudo apt install -y software-properties-common ca-certificates lsb-release apt-transport-https
+
+
+
+##INSTALLING COMPOSER 
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+php -r "if (hash_file('sha384', 'composer-setup.php') === 'dac665fdc30fdd8ec78b38b9800061b4150413ff2e3b6f88543c636f7cd84f6db9189d43a81e5503cda447da73c7e5b6') { echo 'Installer verified'.PHP_EOL; } else { echo 'Installer corrupt'.PHP_EOL; unlink('composer-setup.php'); exit(1); }"
+php composer-setup.php
+php -r "unlink('composer-setup.php');"
+
+
+
+
+
+
+# Add Ondřej Surý's PPA for PHP
+info "Adding Ondřej Surý's PPA for PHP..."
+sudo add-apt-repository -y ppa:ondrej/php
+
+# Update package lists after adding new PPA
+info "Updating package lists after adding PPA..."
+sudo apt update -y
+
+# Install PHP 8.4 and common extensions
+info "Installing PHP 8.4 and common extensions..."
+sudo apt install -y php8.4 php8.4-cli php8.4-fpm php8.4-mysql php8.4-xml php8.4-mbstring php8.4-curl php8.4-zip
+
+
+
+
+
+# install NODEJS 
+# Download and install nvm:
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+
+# in lieu of restarting the shell
+\. "$HOME/.nvm/nvm.sh"
+
+# Download and install Node.js:
+nvm install 22
+
+
+
+# Verify PHP installation
+info "Verifying PHP installation..."
+php8.4 -v
+
+# Verify the Node.js version:
+node -v # Should print "v22.14.0".
+nvm current # Should print "v22.14.0".
+
+# Verify npm version:
+npm -v # Should print "10.9.2".
+info "PHP 8.4 installation completed successfully."
+
