@@ -8,6 +8,7 @@ rm -rf *.tar.gz
 echo 'export PATH="$PATH:/opt/nvim-linux-x86_64/bin"' >> ~/.bashrc 
 
 git clone https://github.com/folke/lazy.nvim.git ~/.local/share/nvim/lazy/lazy.nvim
+cp nvim-lazy ~/.config/nvim
 #Finally:  don't forget to run :Lazy 
 
 
