@@ -1,0 +1,70 @@
+#!/bin/bash
+
+set -e
+
+# Function to display info
+function print_info {
+    echo -e "\e[34m[INFO]\e[0m $1"
+}
+
+# Function to print progress on the same line
+function print_progress {
+    echo -ne "$1\r"
+}
+
+# Update package lists
+print_info "Updating package lists..."
+print_progress "Updating package lists..."
+sudo apt update -y 2>&1 | while read -r line; do
+    print_progress "$line"
+done
+echo "" # Move to the next line
+
+# Install prerequisites
+print_info "Installing prerequisites..."
+print_progress "Installing prerequisites..."
+sudo apt install -y software-properties-common 2>&1 | while read -r line; do
+    print_progress "$line"
+done
+echo "" # Move to the next line
+
+# Add the deadsnakes PPA
+print_info "Adding deadsnakes PPA..."
+print_progress "Adding deadsnakes PPA..."
+sudo add-apt-repository ppa:deadsnakes/ppa -y 2>&1 | while read -r line; do
+    print_progress "$line"
+done
+echo "" # Move to the next line
+
+# Update package list again
+print_info "Updating package list again..."
+print_progress "Updating package list again..."
+sudo apt update -y 2>&1 | while read -r line; do
+    print_progress "$line"
+done
+echo "" # Move to the next line
+
+# Install Python 3.11
+print_info "Installing Python 3.11..."
+print_progress "Installing Python 3.11..."
+sudo apt install -y python3.11 2>&1 | while read -r line; do
+    print_progress "$line"
+done
+echo "" # Move to the next line
+
+# Install pip for Python 3.11
+print_info "Installing pip for Python 3.11..."
+print_progress "Installing pip for Python 3.11..."
+curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py > /dev/null 2>&1
+python3.11 get-pip.py > /dev/null 2>&1
+rm get-pip.py > /dev/null 2>&1
+echo 'export PATH="$PATH:/home/panda/.local/bin"' >> ~/.bashrc
+source ~/.bashrc
+echo "" # Move to the next line
+
+# Verify Python 3.11 and pip installation
+print_info "Verifying Python 3.11 installation..."
+print_progress "Verifying Python 3.11 installation..."
+python3.11 --version
+python3.11 -m pip --version
+

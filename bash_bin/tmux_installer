@@ -1,0 +1,33 @@
+#!/bin/bash
+
+set -e
+
+# Function to display info
+function print_info {
+    echo -e "\e[34m[INFO]\e[0m $1"
+}
+
+# Function to print progress on the same line
+function print_progress {
+    echo -ne "$1\r"
+}
+
+# Update package lists
+print_info "Updating package lists..."
+print_progress "Updating package lists..."
+sudo apt update -y 2>&1 | while read -r line; do
+    print_progress "$line"
+done
+
+echo "" # Move to the next line
+
+sudo apt install tmux -y 2>&1 | while read -r line; do
+    print_progress "$line"
+done
+
+
+echo "" # Move to the next line
+print_info "Installed Tmux" 
+tmux --version 
+
+echo "" # Move to the next line
