@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Usage: ./flutter-starter.sh my_project_name
+
+flutter create $1
+cd $1
+
+# Create core folders
+mkdir -p core/{constants,errors,network,routes,services,shared_widget,theme,utils}
+
+# Create error files
+touch core/errors/{exceptions.dart,exeption_to_failure_map.dart,failures.dart,map_failure_to_message.dart,refresh_token_exception.dart}
+
+# Create network file
+touch core/network/network_info.dart
+
+# Create theme files
+touch core/theme/{colors.dart,typography.dart}
+
+# Create asset folders
+mkdir -p assets/{icons,icons/lotties,icons/settings_icons,images,images/animation}
+
+# Add assets to pubspec.yaml
+
+# Insert assets into pubspec.yaml
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  # macOS sed
+  sed -i '' '/^flutter:/a\
+  assets:\
+    - assets/icons/\
+    - assets/icons/lotties/\
+    - assets/icons/settings_icons/\
+    - assets/images/\
+    - assets/images/animation/' pubspec.yaml
+else
+  # Linux sed
+  sed -i '/^flutter:/a\  assets:\n    - assets/icons/\n    - assets/icons/lotties/\n    - assets/icons/settings_icons/\n    - assets/images/\n    - assets/images/animation/' pubspec.yaml
+fi
+
+# Add dependencies
+flutter pub add cupertino_icons auto_route flutter_svg modal_bottom_sheet flutter_profile_picture flutter_bloc equatable internet_connection_checker_plus shared_preferences dio lottie get_it http_interceptor
+
