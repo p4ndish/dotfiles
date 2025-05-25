@@ -16,10 +16,6 @@ cp nvim-lazy ~/.config/nvim
 
 # Installing php, mysql, laravel, composer, npm
 chmod +x bash_bin/*
-chmod +x bash_bin/bin/*
-./bash_bin/php_installer 
-./bash_bin/python_installer 
-./bash_bin/tmux_installer 
+cp -r bash_bin/* /usr/local/bin/
 
-sudo cp bash_bin/bin/* /bin/. 
-
+cp templates /opt/.
