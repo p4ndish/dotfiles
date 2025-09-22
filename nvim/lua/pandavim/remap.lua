@@ -20,11 +20,10 @@ vim.keymap.set('n', '<C-a>', ':<C-u>normal! ggVG<CR>', {noremap = true, silent =
 -- for example `10<A-h>` will `resize_left` by `(10 * config.default_amount)`
 -- moving between splits
 -- swapping buffers between windows
-vim.keymap.set('n', '<leader><leader>h', require('smart-splits').swap_buf_left)
-vim.keymap.set('n', '<leader><leader>j', require('smart-splits').swap_buf_down)
-vim.keymap.set('n', '<leader><leader>k', require('smart-splits').swap_buf_up)
-vim.keymap.set('n', '<leader><leader>l', require('smart-splits').swap_buf_right)
-
+vim.keymap.set('n', '<leader>sh', require('smart-splits').swap_buf_left)
+vim.keymap.set('n', '<leader>sj', require('smart-splits').swap_buf_down)
+vim.keymap.set('n', '<leader>sk', require('smart-splits').swap_buf_up)
+vim.keymap.set('n', '<leader>sl', require('smart-splits').swap_buf_right)
 
 function VSFileName()
     local file_name = vim.fn.input("Enter file name: ", "", "file")
@@ -45,23 +44,23 @@ vim.keymap.set("n", "<leader>pv", vim.cmd.Ex)
 vim.keymap.set({"x", "n", }, "<leader>p", "\"_dP")
 -- commenting from insert mode 
  
-vim.keymap.set({"n", "x"}, "<leader>r\"", ':s/\\%V.*\\%V/"&"/<CR>')
-vim.keymap.set({"n", "x"}, "<leader>r'", ":s/\\%V.*\\%V/'&'/<CR>")
-vim.keymap.set({"n", "x"}, "<leader>r[", ":s/\\%V.*\\%V/[&]/<CR>")
-vim.keymap.set({"n", "x"}, "<leader>r{", ":s/\\%V.*\\%V/{&}/<CR>")
-vim.keymap.set({"n", "x"}, "<leader>r(", ":s/\\%V.*\\%V/(&)/<CR>")
-vim.keymap.set({"n", "x"}, "<leader>//", ":s/^/\\/\\/ /<CR>")
-vim.keymap.set({"n", "x"}, "<leader>/#", ":s/^/# /<CR>")
+vim.keymap.set({"n", "x"}, "<leader>r\"", ':s/\\%V.*\\%V/"&"/')
+vim.keymap.set({"n", "x"}, "<leader>r'", ":s/\\%V.*\\%V/'&'/")
+vim.keymap.set({"n", "x"}, "<leader>r[", ":s/\\%V.*\\%V/[&]/")
+vim.keymap.set({"n", "x"}, "<leader>r{", ":s/\\%V.*\\%V/{&}/")
+vim.keymap.set({"n", "x"}, "<leader>r(", ":s/\\%V.*\\%V/(&)/")
+vim.keymap.set({"n", "x"}, "<leader>//", ":s/^/\\/\\/ /")
+vim.keymap.set({"n", "x"}, "<leader>/#", ":s/^/# /")
 
-vim.keymap.set({"n", "x"}, "<leader>r{{", ":s/\\%V.*\\%V/{{--&--}}/<CR>")
-vim.keymap.set({"n", "x"}, "<leader>r}}", ":s/\\%V.*\\%V/{{--&--}}/<CR>")
+vim.keymap.set({"n", "x"}, "<leader>r{{", ":s/\\%V.*\\%V/{{--&--}}/")
+vim.keymap.set({"n", "x"}, "<leader>r}}", ":s/\\%V.*\\%V/{{--&--}}/")
+-- local builtin = require('telescope.builtin')
 
-local builtin = require('telescope.builtin')
-vim.keymap.set('n', '<leader>ff', builtin.find_files, {})
-vim.keymap.set('n', '<leader>fg', builtin.live_grep, {})
-vim.keymap.set('n', '<leader>fb', builtin.buffers, {})
-vim.keymap.set('n', '<leader>fh', builtin.help_tags, {})
-
+-- vim.keymap.set('n', '<leader>ff', builtin.find_files, {})
+-- vim.keymap.set('n', '<leader>fg', builtin.live_grep, {})
+-- vim.keymap.set('n', '<leader>fb', builtin.buffers, {})
+-- vim.keymap.set('n', '<leader>fh', builtin.help_tags, {})
+-- vim.keymap.set("n", "<leader>fp", ":Telescope project<CR>", { noremap = true, silent = true })
 
 local opts = { noremap = true, silent = true }
 -- Visual-mode commands
@@ -138,7 +137,39 @@ vim.keymap.set('n', '<C-\\>', require('smart-splits').move_cursor_previous)
 
 -- custom split resize movment 
 
-vim.keymap.set('n', '<S-A-h>', require('smart-splits').resize_left)
-vim.keymap.set('n', '<S-A-j>', require('smart-splits').resize_down)
-vim.keymap.set('n', '<S-A-k>', require('smart-splits').resize_up)
-vim.keymap.set('n', '<S-A-l>', require('smart-splits').resize_right)
+vim.keymap.set('n', '<A-h>', require('smart-splits').resize_left)
+vim.keymap.set('n', '<A-j>', require('smart-splits').resize_down)
+vim.keymap.set('n', '<A-k>', require('smart-splits').resize_up)
+vim.keymap.set('n', '<A-l>', require('smart-splits').resize_right)
+
+local M = {}
+vim.keymap.set("n", "<leader>ff", ":Telescope find_files<CR>", { noremap = true, silent = true })
+    
+-- Find files in git repository (respects .gitignore)
+vim.keymap.set("n", "<leader>fg", ":Telescope git_files<CR>", { noremap = true, silent = true })
+
+-- Live grep in current working directory
+vim.keymap.set("n", "<leader>fs", ":Telescope live_grep<CR>", { noremap = true, silent = true })
+
+-- Browse open buffers
+vim.keymap.set("n", "<leader>fb", ":Telescope buffers<CR>", { noremap = true, silent = true })
+
+-- Browse projects
+vim.keymap.set("n", "<leader>fp", ":Telescope project<CR>", { noremap = true, silent = true })
+
+-- File browser starting from current working directory
+vim.keymap.set("n", "<leader>fd", ":Telescope file_browser<CR>", { noremap = true, silent = true })
+
+-- Other useful keybindings
+vim.keymap.set("n", "<leader>e", ":NvimTreeToggle<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "<leader>u", vim.cmd.UndotreeToggle)
+
+-- Window navigation
+vim.keymap.set("n", "<C-h>", "<C-w>h", { noremap = true, silent = true })
+vim.keymap.set("n", "<C-j>", "<C-w>j", { noremap = true, silent = true })
+vim.keymap.set("n", "<C-k>", "<C-w>k", { noremap = true, silent = true })
+vim.keymap.set("n", "<C-l>", "<C-w>l", { noremap = true, silent = true })
+
+-- Terminal keybindings have been moved to terminal.lua
+
+

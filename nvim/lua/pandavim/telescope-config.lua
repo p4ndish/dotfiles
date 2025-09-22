@@ -3,11 +3,16 @@ local M = {}
 function M.setup()
     local telescope = require("telescope")
     local actions = require("telescope.actions")
-    
+
     telescope.setup({
         defaults = {
             path_display = { "truncate" },
             file_ignore_patterns = { "node_modules", ".git/" },
+            previewer = false,
+            file_previewer = false,
+            grep_previewer = false,
+            qflist_previewer = false,
+            buffer_previewer = false,
             mappings = {
                 i = {
                     ["<C-j>"] = actions.move_selection_next,
@@ -15,7 +20,6 @@ function M.setup()
                     ["<Down>"] = actions.move_selection_next,
                     ["<Up>"] = actions.move_selection_previous,
                     ["<C-n>"] = actions.move_selection_next,
-                    ["<C-p>"] = actions.move_selection_previous,
                     ["<C-u>"] = actions.preview_scrolling_up,
                     ["<C-d>"] = actions.preview_scrolling_down,
                     ["<C-c>"] = actions.close,
@@ -41,15 +45,19 @@ function M.setup()
                 path_display = { "smart" },
                 hidden = true,
                 no_ignore = false,
+                previewer = false,
             },
             buffers = {
                 path_display = { "smart" },
+                previewer = false,
             },
             grep_string = {
                 path_display = { "smart" },
+                previewer = false,
             },
             live_grep = {
                 path_display = { "smart" },
+                previewer = false,
             },
         },
         extensions = {
@@ -60,8 +68,6 @@ function M.setup()
             project = {
                 base_dirs = {
                     "~/Documents",
-                    -- "~/work",
-                    -- "~/personal",
                     { path = "~/Documents", max_depth = 2 }
                 },
                 hidden_files = true,
@@ -70,25 +76,18 @@ function M.setup()
                 theme = "dropdown",
                 hijack_netrw = true,
                 mappings = {
-                    ["i"] = {
-                        -- your custom insert mode mappings
-                    },
-                    ["n"] = {
-                        -- your custom normal mode mappings
-                    },
+                    ["i"] = {},
+                    ["n"] = {},
                 },
+                previewer = false,
             },
         },
     })
-    
+
     -- Load extensions
-    telescope.load_extension("media_files")
-    telescope.load_extension("project")
-    
-    -- Load file_browser extension if available
-    pcall(function()
-        telescope.load_extension("file_browser")
-    end)
+    pcall(function() telescope.load_extension("media_files") end)
+    pcall(function() telescope.load_extension("project") end)
+    pcall(function() telescope.load_extension("file_browser") end)
 end
 
 return M 

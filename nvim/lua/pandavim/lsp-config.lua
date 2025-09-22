@@ -22,6 +22,7 @@ function M.setup()
         vim.keymap.set('n', '<space>D', vim.lsp.buf.type_definition, opts)
         vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, opts)
         vim.keymap.set('n', '<space>ca', vim.lsp.buf.code_action, opts)
+        vim.keymap.set('n', '<leader>l', vim.lsp.buf.code_action, opts)
         vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
         vim.keymap.set('n', '<space>f', function() 
             vim.lsp.buf.format { async = true } 
@@ -66,6 +67,9 @@ function M.setup()
             lsp = {
                 on_attach = lsp_zero.on_attach,
                 capabilities = lsp_zero.get_capabilities(),
+                settings = {
+                    enableSnippets = true, -- Disable snippets from dartls LSP
+                },
             }
         })
     end)

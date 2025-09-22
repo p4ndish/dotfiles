@@ -8,17 +8,11 @@ cd $1
 # Create core folders
 mkdir -p core/{constants,errors,network,routes,services,shared_widget,theme,utils}
 
-# Create error files
-touch core/errors/{exceptions.dart,exeption_to_failure_map.dart,failures.dart,map_failure_to_message.dart,refresh_token_exception.dart}
-
-# Create network file
-touch core/network/network_info.dart
-
-# Create theme files
-touch core/theme/{colors.dart,typography.dart}
-
 # Create asset folders
 mkdir -p assets/{icons,icons/lotties,icons/settings_icons,images,images/animation}
+
+
+cp -r /opt/templates/flutter/* lib/
 
 # Add assets to pubspec.yaml
 

@@ -1,4 +1,5 @@
 #!/bin/bash
 
 python3.11 -m venv myenv 
-py_activate 
+source myenv/bin/activate 
+

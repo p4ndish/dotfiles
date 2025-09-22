@@ -4,7 +4,7 @@ function M.setup()
     -- Set up the Tokyo Night theme
     require("tokyonight").setup({
         -- Choose the style: "storm", "moon", "night", "day"
-        style = "night",
+        style = "storm",
         
         -- Make the theme transparent
         transparent = false,

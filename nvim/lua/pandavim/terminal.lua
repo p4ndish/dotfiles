@@ -18,7 +18,7 @@ function M.setup()
         start_in_insert = true,
         insert_mappings = true,
         persist_size = true,
-        direction = "horizontal", -- 'vertical', 'horizontal', 'tab', 'float'
+        direction = "float", -- 'vertical', 'horizontal', 'tab', 'float'
         close_on_exit = true,
         shell = vim.o.shell,
         float_opts = {
@@ -95,7 +95,7 @@ function M.setup()
     
     vim.api.nvim_set_keymap("n", "<leader>tp", "<cmd>lua _python_toggle()<CR>", {noremap = true, silent = true})
     
--- Terminal keybindings
+    -- Terminal keybindings
     vim.keymap.set("n", "<leader>ti", function()
         local term_bufs = {}
         for _, buf in ipairs(vim.api.nvim_list_bufs()) do

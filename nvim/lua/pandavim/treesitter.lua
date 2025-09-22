@@ -1,14 +1,17 @@
-require'nvim-treesitter.configs'.setup {
-  ensure_installed = { "python", "dart", "php", "c", "lua", "vim", "vimdoc", "query" },
+local M = {}
 
-  sync_install = false,
+function M.setup()
+    require('nvim-treesitter.configs').setup({
+        ensure_installed = { "lua", "php", "python", "javascript", "typescript", "json", "dart" },
+        highlight = { enable = true },
+        additional_vim_regex_highlighting = false,
+    })
+    
+    -- Create a command to enable Treesitter for the current buffer
+    vim.api.nvim_create_user_command("EnableTS", function()
+        vim.cmd("TSBufEnable highlight")
+        print("Treesitter highlighting enabled for this buffer")
+    end, {})
+end
 
-  auto_install = true,
-
-
-  highlight = {
-    enable = true,
-
-    additional_vim_regex_highlighting = false,
-  },
-}
+return M
