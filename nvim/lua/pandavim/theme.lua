@@ -1,17 +1,25 @@
+-- Tokyo Night theme configuration for PandaVim
+
 local M = {}
 
 function M.setup()
-    -- Set up the Tokyo Night theme
-    require("tokyonight").setup({
+    -- Try to load tokyonight
+    local ok, tokyonight = pcall(require, "tokyonight")
+    if not ok then
+        vim.notify("Tokyonight theme not available, using default", vim.log.levels.WARN)
+        return
+    end
+
+    tokyonight.setup({
         -- Choose the style: "storm", "moon", "night", "day"
         style = "storm",
-        
+
         -- Make the theme transparent
         transparent = false,
-        
+
         -- Configure terminal colors
         terminal_colors = true,
-        
+
         -- Style options
         styles = {
             comments = { italic = true },
@@ -21,52 +29,48 @@ function M.setup()
             sidebars = "dark",
             floats = "dark",
         },
-        
+
         -- Sidebar elements
         sidebars = { "qf", "help", "terminal", "packer", "NvimTree", "Trouble" },
-        
+
         -- Make darker
         on_colors = function(colors)
-            -- You can modify colors here if needed
             colors.LineNr = { fg = "#ffffff", bg = "#ffffff" }
             colors.CursorLineNr = { fg = "#ffffff", bold = true }
-            -- Example: colors.bg = "#000000"
         end,
-        
+
         -- Modify highlight groups
         on_highlights = function(highlights, colors)
-            -- Make line numbers have white background and dark text
             highlights.LineNr = { fg = "#ffffff", bg = "#ffffff" }
             highlights.CursorLineNr = { fg = "#ffffff", bold = true }
-            
-            -- Also set the gutter background to white
-            -- highlights.SignColumn = { bg = "#ffffff" }
-            
-            -- If you want the current line highlight to extend to the number column
-            -- highlights.CursorLine = { bg = colors.bg_highlight }
         end,
     })
-    
-    -- Set the colorscheme
-    vim.cmd("colorscheme tokyonight")
-    
+
+    -- Set the colorscheme with fallback
+    local ok2, _ = pcall(vim.cmd, "colorscheme tokyonight")
+    if not ok2 then
+        vim.notify("Failed to set tokyonight colorscheme", vim.log.levels.ERROR)
+        -- Fallback to default
+        pcall(vim.cmd, "colorscheme habamax")
+    end
+
     -- Additional UI settings
     vim.opt.termguicolors = true
     vim.opt.background = "dark"
-    
+
     -- Status line configuration
-    vim.opt.laststatus = 3  -- Global statusline
-    
+    vim.opt.laststatus = 3
+
     -- Cursor line highlighting
     vim.opt.cursorline = true
-    
+
     -- Line numbers
     vim.opt.number = true
     vim.opt.relativenumber = true
-    
-    -- Sign column (for git signs, diagnostics, etc.)
+
+    -- Sign column
     vim.opt.signcolumn = "yes"
-    
+
     -- Highlight on yank
     vim.api.nvim_create_autocmd("TextYankPost", {
         callback = function()
@@ -75,4 +79,4 @@ function M.setup()
     })
 end
 
-return M 
+return M
