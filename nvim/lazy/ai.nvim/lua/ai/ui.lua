@@ -86,12 +86,12 @@ function M.create_chat_window()
     state.editor_win = vim.api.nvim_get_current_win()
 
     local buf = M.get_buffer()
-    local width = vim.o.columns * 0.3  -- 30% of screen width
+    local width = math.floor(vim.o.columns * 0.3)  -- 30% of screen width
 
     local win_config = {
         relative = "editor",
         width = width,
-        height = vim.o.lines,
+        height = math.floor(vim.o.lines),
         col = vim.o.columns - width,
         row = 0,  -- Start at top for full height
         style = "minimal",
@@ -141,11 +141,12 @@ function M.create_input_area()
     local buf = vim.api.nvim_create_buf(false, true)
     state.input_buffer = buf
 
+    local chat_width = math.floor(vim.o.columns * 0.3)
     local win_config = {
         relative = "editor",
-        width = vim.o.columns * 0.3,
+        width = chat_width,
         height = 3,  -- Input area height
-        col = vim.o.columns - vim.o.columns * 0.3,
+        col = vim.o.columns - chat_width,
         row = vim.o.lines - 3,
         style = "minimal",
         border = "rounded",
@@ -431,8 +432,9 @@ function M.close_windows()
         state.input_window = nil
     end
 
-    if state.buffer and state.buffer ~= vim.api.nvim_get_current_buf() then
-        vim.api.nvim_buf_delete(state.buffer, { force = true })
+    -- Don't delete buffer - just clear it for reuse
+    if state.buffer then
+        vim.api.nvim_buf_set_lines(state.buffer, 0, -1, false, {})
         state.buffer = nil
     end
 end
