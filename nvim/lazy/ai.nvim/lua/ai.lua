@@ -8,6 +8,7 @@ local client = require("ai.client")
 local skills = require("ai.skills")
 local ui = require("ai.ui")
 local inline_edit = require("ai.inline_edit")
+local context = require("ai.context")
 local diff = require("ai.diff")
 
 --- Setup the AI module
@@ -52,12 +53,16 @@ function M.setup(user_config)
 
     -- Register keymaps
     vim.keymap.set("n", "<leader>ac", function()
-        ui.open()
-    end, { noremap = true, silent = true, desc = "AI: Open chat" })
+        ui.toggle()
+    end, { noremap = true, silent = true, desc = "AI: Toggle chat" })
 
     vim.keymap.set("n", "<leader>aq", function()
         ui.close()
     end, { noremap = true, silent = true, desc = "AI: Close chat" })
+
+    vim.keymap.set("n", "<leader>ae", function()
+        vim.cmd("AIEdit")
+    end, { noremap = true, silent = true, desc = "AI: Edit selection/line" })
 
     vim.keymap.set("n", "<leader>as", function()
         vim.cmd("AISkills")
@@ -77,9 +82,30 @@ function M.setup(user_config)
         }, function(choice)
             if choice then
                 config.set_model(choice)
+                vim.notify("Model set to: " .. choice, vim.log.levels.INFO)
             end
         end)
     end, { noremap = true, silent = true, desc = "AI: Switch model" })
+
+    -- Focus switching keymaps
+    vim.keymap.set("n", "<C-Left>", function()
+        ui.focus_editor()
+    end, { noremap = true, silent = true, desc = "AI: Focus editor" })
+
+    vim.keymap.set("n", "<C-Right>", function()
+        ui.focus_chat()
+    end, { noremap = true, silent = true, desc = "AI: Focus chat" })
+
+    vim.keymap.set("n", "<C-j>", function()
+        ui.toggle()
+    end, { noremap = true, silent = true, desc = "AI: Toggle chat (alt)" })
+
+    -- File context keymap
+    vim.keymap.set("n", "<leader>af", function()
+        local bufnr = vim.api.nvim_get_current_buf()
+        context.toggle_file_context(bufnr)
+        ui.update_header()
+    end, { noremap = true, silent = true, desc = "AI: Toggle file context" })
 
     vim.notify("PandaVim AI loaded!", vim.log.levels.INFO)
 end

@@ -1,12 +1,13 @@
 -- AI Chat UI for PandaVim
--- Right-side chat window with stream processing
+-- Full-height sidebar chat interface like Cursor/Windsurf
 
 local M = {}
 
-local config = require("pandavim.ai.config")
-local client = require("pandavim.ai.client")
-local skills = require("pandavim.ai.skills")
-local diff = require("pandavim.ai.diff")
+local config = require("ai.config")
+local client = require("ai.client")
+local skills = require("ai.skills")
+local context = require("ai.context")
+local diff = require("ai.diff")
 
 -- State
 local state = {
@@ -16,6 +17,8 @@ local state = {
     input_buffer = nil,
     is_streaming = false,
     messages = {},  -- Chat history
+    editor_win = nil,  -- Track editor window for focus
+    header_lines = 10,  -- Lines for header/info area
 }
 
 --- Get or create the chat buffer
@@ -27,6 +30,7 @@ function M.get_buffer()
         vim.api.nvim_buf_set_option(state.buffer, 'swapfile', false)
         vim.api.nvim_buf_set_option(state.buffer, 'buftype', 'nowrite')
         vim.api.nvim_buf_set_option(state.buffer, 'bufhidden', 'wipe')
+        vim.api.nvim_buf_set_option(state.buffer, 'filetype', 'ai-chat')
     end
     return state.buffer
 end
@@ -41,23 +45,55 @@ function M.setup_highlights()
     vim.api.nvim_set_hl(0, "AiChatMessageAssistant", { fg = "#d1fae5" })
     vim.api.nvim_set_hl(0, "AiChatPrompt", { fg = "#93c5fd" })
     vim.api.nvim_set_hl(0, "AiChatStatus", { fg = "#a1a1aa", italic = true })
+    vim.api.nvim_set_hl(0, "AiChatHeader", { fg = "#f59e0b", bold = true })
+    vim.api.nvim_set_hl(0, "AiChatFile", { fg = "#8b5cf6" })
 end
 
---- Create the chat window
--- @param width number: Window width (default 40)
-function M.create_chat_window(width)
-    width = width or 40
+--- Update header with model and file info
+function M.update_header()
+    if not state.chat_window or not vim.api.nvim_win_is_valid(state.chat_window) then
+        return
+    end
 
+    local buf = M.get_buffer()
+    local current_model = config.get_model()
+    local file_count = context.count()
+    local provider = config.get_provider()
+
+    local header_lines = {
+        string.format(" AI Chat [Model: %s] [Provider: %s] [Files: %d] ", current_model, provider, file_count),
+        "────────────────────────────────────────────────────────────────────────────",
+        " [File Context] [Skills] /help for commands",
+        "",
+    }
+
+    -- Set header lines at top of buffer
+    vim.api.nvim_buf_set_lines(buf, 0, #header_lines, false, header_lines)
+
+    -- Apply header highlight
+    local header_id = vim.api.nvim_get_hl_id_by_name("AiChatHeader")
+    if header_id ~= 0 then
+        vim.api.nvim_buf_add_highlight(buf, header_id, 0, 0, 0, -1)
+    end
+end
+
+--- Create the full-height chat window
+function M.create_chat_window()
     -- Close existing windows
     M.close_windows()
 
+    -- Save editor window
+    state.editor_win = vim.api.nvim_get_current_win()
+
     local buf = M.get_buffer()
+    local width = vim.o.columns * 0.3  -- 30% of screen width
+
     local win_config = {
-        relative = "win",
+        relative = "editor",
         width = width,
-        height = vim.o.lines - 4,
+        height = vim.o.lines,
         col = vim.o.columns - width,
-        row = 1,
+        row = 0,  -- Start at top for full height
         style = "minimal",
         border = "rounded",
     }
@@ -66,25 +102,53 @@ function M.create_chat_window(width)
     vim.api.nvim_win_set_option(state.chat_window, 'conceallevel', 3)
     vim.api.nvim_win_set_option(state.chat_window, 'list', false)
 
-    -- Add welcome message
-    M.print_message("system", "Welcome to PandaVim AI!")
-    M.print_message("system", "Type your message and press Enter to send.")
-    M.print_message("system", "Use /skills to see available skills.")
+    -- Setup buffer options
+    vim.api.nvim_buf_set_option(buf, 'scrollbind', false)
+    vim.api.nvim_buf_set_option(buf, 'cursorbind', false)
+
+    -- Update header
+    M.update_header()
+
+    -- Add welcome message after header
+    local welcome_lines = {
+        "",
+        "Welcome to PandaVim AI!",
+        "",
+        "Type your message and press Enter to send.",
+        "Use /help to see available commands.",
+        "",
+    }
+
+    local current_lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+    for _, line in ipairs(welcome_lines) do
+        table.insert(current_lines, line)
+    end
+    vim.api.nvim_buf_set_lines(buf, -1, -1, false, welcome_lines)
+
+    -- Add model info line
+    local model_lines = {
+        "Current model: " .. config.get_model(),
+        "",
+    }
+    vim.api.nvim_buf_set_lines(buf, -1, -1, false, model_lines)
+
+    -- Scroll to bottom
+    vim.api.nvim_win_set_cursor(state.chat_window, { vim.api.nvim_buf_line_count(buf), 0 })
 end
 
---- Create the input line
-function M.create_input_line()
+--- Create the input area at bottom of chat window
+function M.create_input_area()
     local buf = vim.api.nvim_create_buf(false, true)
     state.input_buffer = buf
 
     local win_config = {
-        relative = "win",
-        width = 80,
-        height = 1,
-        col = 0,
-        row = vim.o.lines - 1,
+        relative = "editor",
+        width = vim.o.columns * 0.3,
+        height = 3,  -- Input area height
+        col = vim.o.columns - vim.o.columns * 0.3,
+        row = vim.o.lines - 3,
         style = "minimal",
-        border = "none",
+        border = "rounded",
     }
 
     state.input_window = vim.api.nvim_open_win(buf, false, win_config)
@@ -114,7 +178,7 @@ function M.create_input_line()
     end, { buffer = buf, noremap = true, silent = true })
 
     -- Set filetype
-    vim.api.nvim_buf_set_option(buf, 'filetype', 'ai-chat')
+    vim.api.nvim_buf_set_option(buf, 'filetype', 'ai-chat-input')
 end
 
 --- Print a message to the chat window
@@ -129,14 +193,14 @@ function M.print_message(role, content)
     local hl_group
 
     if role == "user" then
-        prefix = "[User] " .. timestamp .. " "
+        prefix = "👤 You [" .. timestamp .. "] "
         hl_group = "AiChatMessageUser"
     elseif role == "assistant" then
-        prefix = "[AI] " .. timestamp .. " "
+        prefix = "🤖 AI [" .. timestamp .. "] "
         hl_group = "AiChatMessageAssistant"
     else
-        prefix = "[System] " .. timestamp .. " "
-        hl_group = "AiChatMessageSystem"
+        prefix = "ℹ️  System [" .. timestamp .. "] "
+        hl_group = "AiChatSystem"
     end
 
     -- Add prefix line
@@ -152,6 +216,9 @@ function M.print_message(role, content)
     if hl_id ~= 0 then
         vim.api.nvim_buf_add_highlight(buf, hl_id, 0, start_line, 0, #prefix)
     end
+
+    -- Update header
+    M.update_header()
 
     -- Scroll to bottom
     vim.api.nvim_win_set_cursor(state.chat_window, { vim.api.nvim_buf_line_count(buf), 0 })
@@ -190,8 +257,15 @@ function M.process_user_message(message)
         return
     end
 
+    -- Add file context if any files are selected
+    local context_string = context.get_context_string()
+    local full_message = message
+    if context_string ~= "" then
+        full_message = context_string .. "\n\n---\n\n" .. message
+    end
+
     -- Add user message to chat
-    table.insert(state.messages, { role = "user", content = message })
+    table.insert(state.messages, { role = "user", content = full_message })
     M.print_message("user", message)
 
     -- Get response
@@ -215,21 +289,9 @@ function M.process_command(command)
         state.messages = {}
         local buf = M.get_buffer()
         vim.api.nvim_buf_set_lines(buf, 0, -1, false, {})
+        M.create_chat_window()
+        M.create_input_area()
         M.print_message("system", "Chat history cleared.")
-    elseif cmd == "model" then
-        if args ~= "" then
-            config.set_model(args)
-            M.print_message("system", "Model set to: " .. args)
-        else
-            M.print_message("system", "Current model: " .. config.get_model())
-        end
-    elseif cmd == "provider" then
-        if args ~= "" then
-            config.set_provider(args)
-            M.print_message("system", "Provider set to: " .. args)
-        else
-            M.print_message("system", "Current provider: " .. config.get_provider())
-        end
     elseif cmd == "help" then
         M.print_message("system", "Commands:")
         M.print_message("system", "  /skills - List available skills")
@@ -237,6 +299,61 @@ function M.process_command(command)
         M.print_message("system", "  /model <name> - Set model")
         M.print_message("system", "  /provider <name> - Set provider")
         M.print_message("system", "  /help - Show this help")
+        M.print_message("system", "  /files - Show selected files")
+        M.print_message("system", "  /addfile <bufnr> - Add file to context")
+        M.print_message("system", "  /removefile <bufnr> - Remove file from context")
+    elseif cmd == "model" then
+        if args ~= "" then
+            config.set_model(args)
+            M.update_header()
+            M.print_message("system", "Model set to: " .. args)
+        else
+            M.print_message("system", "Current model: " .. config.get_model())
+        end
+    elseif cmd == "provider" then
+        if args ~= "" then
+            config.set_provider(args)
+            M.update_header()
+            M.print_message("system", "Provider set to: " .. args)
+        else
+            M.print_message("system", "Current provider: " .. config.get_provider())
+        end
+    elseif cmd == "files" then
+        local files = context.get_selected()
+        if #files == 0 then
+            M.print_message("system", "No files in context")
+        else
+            M.print_message("system", "Files in context:")
+            for _, bufnr in ipairs(files) do
+                M.print_message("system", "  - " .. vim.api.nvim_buf_get_name(bufnr))
+            end
+        end
+    elseif cmd == "addfile" then
+        local bufnr = tonumber(args)
+        if bufnr then
+            context.toggle_file_context(bufnr)
+            M.update_header()
+        else
+            M.print_message("system", "Usage: /addfile <bufnr>")
+        end
+    elseif cmd == "removefile" then
+        local bufnr = tonumber(args)
+        if bufnr then
+            context.toggle_file_context(bufnr)
+            M.update_header()
+        else
+            M.print_message("system", "Usage: /removefile <bufnr>")
+        end
+    elseif cmd == "focus" then
+        if args == "editor" then
+            if state.editor_win and vim.api.nvim_win_is_valid(state.editor_win) then
+                vim.api.nvim_set_current_win(state.editor_win)
+            end
+        elseif args == "chat" then
+            if state.input_window and vim.api.nvim_win_is_valid(state.input_window) then
+                vim.api.nvim_set_current_win(state.input_window)
+            end
+        end
     else
         M.print_message("system", "Unknown command: " .. cmd .. ". Type /help for commands.")
     end
@@ -326,7 +443,7 @@ function M.toggle()
         M.close_windows()
     else
         M.create_chat_window()
-        M.create_input_line()
+        M.create_input_area()
     end
 end
 
@@ -334,9 +451,12 @@ end
 function M.open()
     if not state.chat_window or not vim.api.nvim_win_is_valid(state.chat_window) then
         M.create_chat_window()
-        M.create_input_line()
+        M.create_input_area()
     end
-    vim.api.nvim_set_current_win(state.input_window)
+    -- Focus input area
+    if state.input_window and vim.api.nvim_win_is_valid(state.input_window) then
+        vim.api.nvim_set_current_win(state.input_window)
+    end
 end
 
 --- Close chat window
@@ -344,17 +464,51 @@ function M.close()
     M.close_windows()
 end
 
+--- Focus editor window
+function M.focus_editor()
+    if state.editor_win and vim.api.nvim_win_is_valid(state.editor_win) then
+        vim.api.nvim_set_current_win(state.editor_win)
+    end
+end
+
+--- Focus chat window
+function M.focus_chat()
+    if state.input_window and vim.api.nvim_win_is_valid(state.input_window) then
+        vim.api.nvim_set_current_win(state.input_window)
+    end
+end
+
 --- Setup the AI UI module
 function M.setup()
     M.setup_highlights()
+
+    -- Create user commands
     vim.api.nvim_create_user_command("AIOpen", function()
         M.open()
     end, {})
+
     vim.api.nvim_create_user_command("AIClose", function()
         M.close()
     end, {})
+
     vim.api.nvim_create_user_command("AIToggle", function()
         M.toggle()
+    end, {})
+
+    vim.api.nvim_create_user_command("AIFocusEditor", function()
+        M.focus_editor()
+    end, {})
+
+    vim.api.nvim_create_user_command("AIFocusChat", function()
+        M.focus_chat()
+    end, {})
+
+    vim.api.nvim_create_user_command("AIClear", function()
+        M.process_command("/clear")
+    end, {})
+
+    vim.api.nvim_create_user_command("AISkills", function()
+        M.process_command("/skills")
     end, {})
 end
 
