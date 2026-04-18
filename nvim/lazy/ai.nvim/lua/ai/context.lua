@@ -1,113 +1,166 @@
--- File Context System for PandaVim AI
--- Manage files to include in chat context
+-- Context file management for PandaVim AI
+-- Handles attaching files to the conversation and building system context blocks
 
 local M = {}
 
--- State
-local state = {
-    selected_files = {},  -- Buffer numbers to include in context
-}
+-- ── State ──────────────────────────────────────────────────────────────────
 
---- Get all open buffers
--- @return table: List of buffers with info
-function M.get_buffers()
-    local buffers = {}
-    for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-        if vim.api.nvim_buf_is_loaded(bufnr) and vim.api.nvim_buf_get_option(bufnr, 'buflisted') then
-            local name = vim.api.nvim_buf_get_name(bufnr)
-            if name ~= "" then
-                local filename = vim.fn.fnamemodify(name, ":~")
-                table.insert(buffers, {
-                    bufnr = bufnr,
-                    filename = filename,
-                    name = name,
-                    relative = vim.fn.fnamemodify(name, ":.")
-                })
-            end
-        end
-    end
-    return buffers
+-- Each entry: { path = string, lines = string[], label = string }
+local attached_files = {}
+
+-- Listeners notified when context changes (used to refresh the context pane)
+local listeners = {}
+
+-- ── Internal helpers ───────────────────────────────────────────────────────
+
+local function notify_listeners()
+  for _, fn in ipairs(listeners) do
+    pcall(fn)
+  end
 end
 
---- Toggle file context for a buffer
--- @param bufnr number: Buffer number
-function M.toggle_file_context(bufnr)
-    bufnr = bufnr or vim.api.nvim_get_current_buf()
-
-    local found = false
-    local new_selection = {}
-
-    for _, selected in ipairs(state.selected_files) do
-        if selected == bufnr then
-            found = true
-        else
-            table.insert(new_selection, selected)
-        end
-    end
-
-    if not found then
-        table.insert(new_selection, bufnr)
-        vim.notify("Added to context: " .. vim.api.nvim_buf_get_name(bufnr), vim.log.levels.INFO)
-    else
-        vim.notify("Removed from context: " .. vim.api.nvim_buf_get_name(bufnr), vim.log.levels.INFO)
-    end
-
-    state.selected_files = new_selection
+--- Derive a short display label from a full path
+-- Shows at most 2 path components: "dir/file.lua"
+local function make_label(path)
+  local parts = vim.split(path, '/', { plain = true })
+  if #parts >= 2 then
+    return parts[#parts - 1] .. '/' .. parts[#parts]
+  end
+  return parts[#parts] or path
 end
 
---- Check if buffer is in context
--- @param bufnr number: Buffer number
--- @return boolean: true if in context
-function M.is_in_context(bufnr)
-    for _, selected in ipairs(state.selected_files) do
-        if selected == bufnr then
-            return true
-        end
-    end
-    return false
+--- Detect filetype from path extension (for code-fence language tag)
+local function lang_from_path(path)
+  local ext = path:match('%.([^%.]+)$') or ''
+  local map = {
+    lua = 'lua', py = 'python', ts = 'typescript', tsx = 'typescriptreact',
+    js = 'javascript', jsx = 'javascriptreact', go = 'go', rs = 'rust',
+    c = 'c', cpp = 'cpp', h = 'c', java = 'java', rb = 'ruby',
+    sh = 'bash', zsh = 'bash', bash = 'bash', md = 'markdown',
+    json = 'json', yaml = 'yaml', yml = 'yaml', toml = 'toml',
+    html = 'html', css = 'css', scss = 'scss', dart = 'dart',
+  }
+  return map[ext] or ext
 end
 
---- Get context as formatted string for AI
--- @return string: Formatted context
-function M.get_context_string()
-    if #state.selected_files == 0 then
-        return ""
-    end
+-- ── Public API ─────────────────────────────────────────────────────────────
 
-    local context = {}
-    table.insert(context, "--- File Context ---")
-
-    for _, bufnr in ipairs(state.selected_files) do
-        local name = vim.api.nvim_buf_get_name(bufnr)
-        local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-        local content = table.concat(lines, "\n")
-
-        table.insert(context, string.format("File: %s", name))
-        table.insert(context, string.format("```", name))
-        table.insert(context, content)
-        table.insert(context, "```")
-        table.insert(context, "")
-    end
-
-    return table.concat(context, "\n")
+--- Register a callback called whenever the context changes
+function M.add_listener(fn)
+  table.insert(listeners, fn)
 end
 
---- Clear all selected files
+--- Attach a file to the context.
+-- If the file is already attached, this is a silent no-op (matches OpenCode's add() guard).
+-- @param path string: absolute or relative path
+-- @return boolean, string: success, error_message
+function M.add_file(path)
+  -- Resolve to absolute path
+  local abs = vim.fn.fnamemodify(path, ':p')
+
+  -- Dedup guard: already attached → silent no-op, no listener notification
+  for _, f in ipairs(attached_files) do
+    if f.path == abs then return true, nil end
+  end
+
+  -- Check file exists and is readable
+  if vim.fn.filereadable(abs) == 0 then
+    return false, 'File not readable: ' .. path
+  end
+
+  -- Check size limit (200 KB) to avoid massive prompts
+  local size = vim.fn.getfsize(abs)
+  if size > 200 * 1024 then
+    return false, 'File too large (> 200 KB): ' .. path
+  end
+
+  local lines = vim.fn.readfile(abs)
+  table.insert(attached_files, {
+    path  = abs,
+    label = make_label(abs),
+    lang  = lang_from_path(abs),
+    lines = lines,
+  })
+
+  notify_listeners()
+  return true, nil
+end
+
+--- Remove a file from context by absolute path
+function M.remove_file(path)
+  local abs = vim.fn.fnamemodify(path, ':p')
+  for i, f in ipairs(attached_files) do
+    if f.path == abs then
+      table.remove(attached_files, i)
+      notify_listeners()
+      return
+    end
+  end
+end
+
+--- Clear all attached files
 function M.clear()
-    state.selected_files = {}
-    vim.notify("Context cleared", vim.log.levels.INFO)
+  attached_files = {}
+  notify_listeners()
 end
 
---- Get selected files
--- @return table: List of selected buffer numbers
-function M.get_selected()
-    return state.selected_files
+--- Return list of attached file entries (read-only view)
+function M.get_files()
+  return attached_files
 end
 
---- Count selected files
--- @return number: Number of selected files
+--- Return the number of attached files
 function M.count()
-    return #state.selected_files
+  return #attached_files
+end
+
+--- Build a system-context string to prepend to the AI conversation.
+-- Returns nil if no files are attached.
+-- @return string|nil
+function M.build_system_context()
+  if #attached_files == 0 then return nil end
+
+  local parts = { '## Attached Files\n' }
+  for _, f in ipairs(attached_files) do
+    table.insert(parts, string.format('### %s\n', f.label))
+    table.insert(parts, string.format('```%s\n', f.lang))
+    table.insert(parts, table.concat(f.lines, '\n'))
+    table.insert(parts, '\n```\n')
+  end
+
+  return table.concat(parts, '')
+end
+
+--- Build the messages array to send to the API, prepending context if present.
+-- @param conversation_messages table: [{role, content}]
+-- @param system_prompt string: base system prompt from config
+-- @return table: messages array ready for the API
+function M.build_messages(conversation_messages, system_prompt)
+  local ctx = M.build_system_context()
+  local full_system = system_prompt or ''
+  if ctx then
+    full_system = full_system .. '\n\n' .. ctx
+  end
+
+  local messages = {}
+  if full_system ~= '' then
+    table.insert(messages, { role = 'system', content = full_system })
+  end
+  for _, m in ipairs(conversation_messages) do
+    -- If the message carries an api_content variant (e.g. user messages
+    -- augmented with <editor_state> by ai/ui.lua), send that to the API
+    -- while ai/ui.lua's chat buffer continues to show the clean `content`.
+    -- Tool-call messages and assistant messages keep their original shape.
+    if m.api_content and m.role == 'user' then
+      table.insert(messages, {
+        role    = 'user',
+        content = m.api_content,
+      })
+    else
+      table.insert(messages, m)
+    end
+  end
+  return messages
 end
 
 return M

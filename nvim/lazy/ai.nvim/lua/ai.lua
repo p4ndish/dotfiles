@@ -1,113 +1,90 @@
--- PandaVim AI - Main module
+-- PandaVim AI - Main entry point
 -- AI-powered coding assistant for Neovim
 
 local M = {}
 
-local config = require("ai.config")
-local client = require("ai.client")
-local skills = require("ai.skills")
-local ui = require("ai.ui")
-local inline_edit = require("ai.inline_edit")
-local context = require("ai.context")
-local diff = require("ai.diff")
+local config      = require('ai.config')
+local ui          = require('ai.ui')
+local inline_edit = require('ai.inline_edit')
+local diff        = require('ai.diff')
 
---- Setup the AI module
--- @param user_config table|nil: User configuration
+--- Setup PandaVim AI
+-- @param user_config table|nil: optional config overrides (see ai/config.lua)
 function M.setup(user_config)
-    -- Setup configuration
-    config.setup(user_config)
+  -- 1. Config first — everything reads from it
+  config.setup(user_config)
 
-    -- Setup diff highlights
-    diff.setup_highlights()
+  -- 2. Diff highlight groups
+  diff.setup_highlights()
 
-    -- Setup UI
-    ui.setup()
+  -- 3. UI (registers AIOpen/AIClose/AIToggle commands internally)
+  ui.setup()
 
-    -- Setup inline edit
-    inline_edit.setup()
+  -- 4. Inline edit (registers AIEdit command + <leader>ae keymap)
+  inline_edit.setup()
 
-    -- Register AI commands
-    vim.api.nvim_create_user_command("AIClear", function()
-        ui.close()
-    end, {})
+  -- ── Extra commands ──────────────────────────────────────────────────────
 
-    vim.api.nvim_create_user_command("AISwitchModel", function(args)
-        if args.args ~= "" then
-            config.set_model(args.args)
-        else
-            vim.notify("Usage: AISwitchModel <model_name>", vim.log.levels.WARN)
-        end
-    end, { nargs = "?" })
+  vim.api.nvim_create_user_command('AISwitchModel', function(args)
+    if args.args ~= '' then
+      config.set_model(args.args)
+    else
+      vim.notify('Usage: :AISwitchModel <model>', vim.log.levels.WARN)
+    end
+  end, { nargs = '?', desc = 'AI: switch model' })
 
-    vim.api.nvim_create_user_command("AISkills", function()
-        ui.process_command("/skills")
-    end, {})
+  vim.api.nvim_create_user_command('AIProvider', function(args)
+    if args.args ~= '' then
+      config.set_provider(args.args)
+    else
+      vim.notify('Current provider: ' .. config.get_provider(), vim.log.levels.INFO)
+    end
+  end, { nargs = '?', desc = 'AI: get/set provider' })
 
-    vim.api.nvim_create_user_command("AIProvider", function(args)
-        if args.args ~= "" then
-            config.set_provider(args.args)
-        else
-            vim.notify("Current provider: " .. config.get_provider(), vim.log.levels.INFO)
-        end
-    end, { nargs = "?" })
+  vim.api.nvim_create_user_command('AISkills', function()
+    ui.process_command('/skills')
+  end, { desc = 'AI: list skills in chat' })
 
-    -- Register keymaps
-    vim.keymap.set("n", "<leader>ac", function()
-        ui.toggle()
-    end, { noremap = true, silent = true, desc = "AI: Toggle chat" })
+  -- ── Global keymaps ──────────────────────────────────────────────────────
 
-    vim.keymap.set("n", "<leader>aq", function()
-        ui.close()
-    end, { noremap = true, silent = true, desc = "AI: Close chat" })
+  local kmap = function(modes, lhs, rhs, desc)
+    vim.keymap.set(modes, lhs, rhs, { noremap = true, silent = true, desc = desc })
+  end
 
-    vim.keymap.set("n", "<leader>ae", function()
-        vim.cmd("AIEdit")
-    end, { noremap = true, silent = true, desc = "AI: Edit selection/line" })
+  -- Toggle sidebar (open + focus, or close)
+  kmap('n', '<leader>ac', function() ui.toggle() end, 'AI: toggle sidebar')
 
-    vim.keymap.set("n", "<leader>as", function()
-        vim.cmd("AISkills")
-    end, { noremap = true, silent = true, desc = "AI: List skills" })
+  -- Focus navigation
+  kmap({ 'n', 'i', 'v' }, '<C-Right>', function() ui.focus_input() end,  'AI: focus sidebar input')
+  kmap({ 'n', 'i', 'v' }, '<C-Left>',  function() ui.focus_editor() end, 'AI: focus editor')
 
-    vim.keymap.set("n", "<leader>am", function()
-        local models = config.get_models(config.get_provider())
-        local model_list = {}
-        for _, m in ipairs(models) do
-            table.insert(model_list, m)
-        end
-        table.sort(model_list)
+  -- Quick model/provider pickers (work without opening sidebar)
+  kmap('n', '<leader>am', function()
+    local models = config.get_models()
+    vim.ui.select(models, { prompt = 'Select AI model:' }, function(choice)
+      if choice then config.set_model(choice) end
+    end)
+  end, 'AI: pick model')
 
-        vim.ui.select(model_list, {
-            prompt = "Select AI model:",
-            format_item = function(m) return m end,
-        }, function(choice)
-            if choice then
-                config.set_model(choice)
-                vim.notify("Model set to: " .. choice, vim.log.levels.INFO)
-            end
-        end)
-    end, { noremap = true, silent = true, desc = "AI: Switch model" })
+  kmap('n', '<leader>ap', function()
+    require('ai.ui').process_command('/providers')
+  end, 'AI: pick provider')
 
-    -- Focus switching keymaps
-    vim.keymap.set("n", "<C-Left>", function()
-        ui.focus_editor()
-    end, { noremap = true, silent = true, desc = "AI: Focus editor" })
+  -- Copy last assistant response to clipboard
+  kmap('n', '<leader>ay', function()
+    local text = ui.get_last_assistant_text()
+    if text then
+      vim.fn.setreg('+', text)
+      ui.toast('Copied response to clipboard', 'success')
+    else
+      ui.toast('No assistant response to copy', 'warn')
+    end
+  end, 'AI: copy last response')
 
-    vim.keymap.set("n", "<C-Right>", function()
-        ui.focus_chat()
-    end, { noremap = true, silent = true, desc = "AI: Focus chat" })
+  -- Inline edit (visual selection or current line)
+  -- (also registered by inline_edit.setup() as <leader>ae)
 
-    vim.keymap.set("n", "<C-j>", function()
-        ui.toggle()
-    end, { noremap = true, silent = true, desc = "AI: Toggle chat (alt)" })
-
-    -- File context keymap
-    vim.keymap.set("n", "<leader>af", function()
-        local bufnr = vim.api.nvim_get_current_buf()
-        context.toggle_file_context(bufnr)
-        ui.update_header()
-    end, { noremap = true, silent = true, desc = "AI: Toggle file context" })
-
-    vim.notify("PandaVim AI loaded!", vim.log.levels.INFO)
+  vim.notify('PandaVim AI ready  (<leader>ac to open)', vim.log.levels.INFO)
 end
 
 return M
