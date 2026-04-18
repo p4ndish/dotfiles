@@ -73,14 +73,6 @@ return {
             "saadparwaiz1/cmp_luasnip",
             "rafamadriz/friendly-snippets",
             "onsails/lspkind.nvim",
-            {
-                "milanglacier/minuet-ai.nvim",
-                event = "InsertEnter",
-                dependencies = { "nvim-lua/plenary.nvim" },
-                config = function()
-                    require("pandavim.minuet").setup()
-                end,
-            },
         },
         config = function()
             require("pandavim.autocomplete").setup()

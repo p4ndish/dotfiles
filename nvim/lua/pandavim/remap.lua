@@ -78,3 +78,4 @@ vim.keymap.set("n", "<leader>Q", ":qa!<CR>", { silent = true, desc = "Force quit
 
 -- Escape from insert mode with Ctrl+Q (works across all platforms)
 vim.keymap.set("i", "<C-q>", "<Esc>")
+
