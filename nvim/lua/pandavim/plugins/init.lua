@@ -173,9 +173,10 @@ return {
         config = true,
     },
 
-    -- Code action indicator
+    -- Code action indicator (disabled on nvim 0.12+ — vim.lsp.diagnostic.from removed)
     {
         "kosayoda/nvim-lightbulb",
+        enabled = vim.fn.has('nvim-0.12') == 0,
         event = "LspAttach",
         config = function()
             local ok, lightbulb = pcall(require, "nvim-lightbulb")

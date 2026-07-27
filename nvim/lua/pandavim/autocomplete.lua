@@ -132,7 +132,6 @@ function M.setup()
             ["<C-b>"] = cmp.mapping.scroll_docs(-4),
             ["<C-f>"] = cmp.mapping.scroll_docs(4),
             ["<C-Space>"] = cmp.mapping.complete(),
-            ["<A-y>"] = require('minuet').make_cmp_map(),
             ["<C-e>"] = cmp.mapping.abort(),
             ["<CR>"] = cmp.mapping.confirm({
                 select = false,
@@ -159,7 +158,6 @@ function M.setup()
         }),
         sources = cmp.config.sources({
             { name = 'nvim_lsp', priority = 1000 },
-            { name = 'minuet', priority = 900 },
             { name = 'buffer', priority = 500 },
             { name = 'path', priority = 250 },
             { name = 'luasnip', priority = 100 },
@@ -230,7 +228,6 @@ function M.setup()
     cmp.setup.filetype({ 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' }, {
         sources = cmp.config.sources({
             { name = 'nvim_lsp', priority = 1000 },
-            { name = 'minuet', priority = 900 },
             { name = 'buffer', priority = 500 },
             { name = 'path', priority = 250 },
             { name = 'luasnip', priority = 100 },
@@ -268,6 +265,12 @@ function M.setup()
             { name = 'buffer', priority = 500 },
             { name = 'path', priority = 250 },
         })
+    })
+
+    -- Disable completion in AI sidebar buffers
+    cmp.setup.filetype({ 'AiChat', 'AiInput', 'AiTopbar', 'AiPanel' }, {
+        enabled = false,
+        sources = {},
     })
 end
 

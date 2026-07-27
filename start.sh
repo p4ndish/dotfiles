@@ -4,8 +4,13 @@ set -e
 # ===========================
 # 1. Install Neovim to /opt
 # ===========================
+# Pin to a known-good STABLE release. Do NOT use /releases/latest — it currently
+# resolves to the unstable 0.12.x line whose binary ships without matching
+# runtime files (missing vim.tty, vim.diagnostic.status, vim.highlight.priorities),
+# which crashes this config. v0.11.6 is the verified stable version.
+NVIM_VERSION="v0.11.6"
 if [[ ! -f ./nvim-linux-x86_64.tar.gz ]]; then
-    curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
+    curl -LO "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-linux-x86_64.tar.gz"
 fi
 
 sudo rm -rf /opt/nvim-linux-x86_64

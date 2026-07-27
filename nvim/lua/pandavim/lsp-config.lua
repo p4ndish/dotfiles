@@ -111,8 +111,10 @@ function M.setup()
                 Lua = {
                     runtime = { version = 'LuaJIT' },
                     diagnostics = { globals = { 'vim' } },
+                    -- Library is injected on-demand by lazydev.nvim (ft=lua), so we
+                    -- do NOT eagerly index the entire runtime here. This removes the
+                    -- slow "loading workspace 1/1807" startup scan.
                     workspace = {
-                        library = vim.api.nvim_get_runtime_file("", true),
                         checkThirdParty = false,
                     },
                     telemetry = { enable = false },

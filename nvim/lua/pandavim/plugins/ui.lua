@@ -43,6 +43,9 @@ return {
     {
         "romgrk/barbar.nvim",
         event = "VeryLazy",
+        cond = function()
+            return #vim.api.nvim_list_uis() > 0
+        end,
         config = function()
             local map = vim.api.nvim_set_keymap
             local opts = { noremap = true, silent = true }
@@ -236,6 +239,16 @@ return {
             vim.keymap.set('n', '<leader>sj', smart_splits.swap_buf_down)
             vim.keymap.set('n', '<leader>sk', smart_splits.swap_buf_up)
             vim.keymap.set('n', '<leader>sl', smart_splits.swap_buf_right)
+
+            vim.api.nvim_create_autocmd('FileType', {
+                group = vim.api.nvim_create_augroup('PandaVimSmartSplitsDisableAI', { clear = true }),
+                pattern = { 'AiChat', 'AiInput', 'AiTopbar' },
+                callback = function(ev)
+                    for _, key in ipairs({ '<C-h>', '<C-j>', '<C-k>', '<C-l>' }) do
+                        pcall(vim.keymap.del, 'n', key, { buffer = ev.buf })
+                    end
+                end,
+            })
         end,
     },
 
@@ -269,6 +282,9 @@ return {
                         "NvimTree",
                         "Trouble",
                         "lazy",
+                        "AiChat",
+                        "AiInput",
+                        "AiTopbar",
                     },
                     buftypes = {
                         "nofile",

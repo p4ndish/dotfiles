@@ -58,8 +58,9 @@ function M.setup()
     vim.opt.termguicolors = true
     vim.opt.background = "dark"
 
-    -- Status line configuration
-    vim.opt.laststatus = 3
+    -- Status line configuration: 2 = show when >=2 windows, 3 = per-window
+    -- Keep at 2 so the AI sidebar can suppress its own statusline cleanly.
+    vim.opt.laststatus = 2
 
     -- Cursor line highlighting
     vim.opt.cursorline = true
@@ -71,12 +72,15 @@ function M.setup()
     -- Sign column
     vim.opt.signcolumn = "yes"
 
-    -- Highlight on yank
-    vim.api.nvim_create_autocmd("TextYankPost", {
-        callback = function()
-            vim.highlight.on_yank({ higroup = "IncSearch", timeout = 150 })
-        end,
-    })
+    -- Highlight on yank (disabled on nvim 0.12+ — vim.highlight.on_yank internals
+    -- try to require 'vim.hl' which was removed in this version)
+    if vim.fn.has('nvim-0.12') == 0 then
+        vim.api.nvim_create_autocmd("TextYankPost", {
+            callback = function()
+                pcall(vim.highlight.on_yank, { higroup = "IncSearch", timeout = 150 })
+            end,
+        })
+    end
 end
 
 return M

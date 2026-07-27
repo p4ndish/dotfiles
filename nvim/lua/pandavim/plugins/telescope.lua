@@ -4,7 +4,6 @@ return {
     -- Main Telescope plugin
     {
         "nvim-telescope/telescope.nvim",
-        tag = "0.1.5",
         cmd = "Telescope",
         keys = {
             { "<leader>ff", "<cmd>Telescope find_files<CR>", desc = "Find files" },

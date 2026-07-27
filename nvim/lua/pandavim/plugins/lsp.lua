@@ -1,6 +1,20 @@
 -- LSP and completion plugins
 
 return {
+    -- lazydev: loads Lua library types on-demand instead of indexing the whole
+    -- runtime at startup. Fixes the slow "loading workspace 1/1807" progress
+    -- without losing any vim.* / plugin completion.
+    {
+        "folke/lazydev.nvim",
+        ft = "lua",
+        opts = {
+            library = {
+                { path = "${3rd}/luv/library", words = { "vim%.uv" } },
+                "lazy.nvim",
+            },
+        },
+    },
+
     -- Mason for LSP server management
     {
         "williamboman/mason.nvim",
@@ -21,19 +35,16 @@ return {
         ft = { "lua", "python", "javascript", "javascriptreact", "typescript", "typescriptreact", "go", "php", "dart" },
         dependencies = { "williamboman/mason.nvim" },
         config = function()
-            local ok, mason_lspconfig = pcall(require, "mason-lspconfig")
-            if not ok then
-                return
+            -- Minimal setup — lsp-zero handles actual server configuration.
+            -- setup_handlers and automatic_enable are unavailable in the
+            -- installed mason-lspconfig version, so we keep this to a bare
+            -- pcall-only setup() call.
+            local ok, mason_lspconfig = pcall(require, 'mason-lspconfig')
+            if ok then
+                pcall(mason_lspconfig.setup, {
+                    automatic_enable = false,
+                })
             end
-            mason_lspconfig.setup({
-                ensure_installed = {
-                    'lua_ls',
-                    'pyright',
-                },
-                automatic_installation = {
-                    exclude = { 'gopls' }
-                },
-            })
         end,
     },
 
@@ -42,6 +53,9 @@ return {
         "VonHeikemen/lsp-zero.nvim",
         branch = "v3.x",
         event = { "BufReadPre", "BufNewFile" },
+        cond = function()
+            return #vim.api.nvim_list_uis() > 0
+        end,
         dependencies = {
             "williamboman/mason.nvim",
             "williamboman/mason-lspconfig.nvim",
@@ -62,6 +76,9 @@ return {
     {
         "hrsh7th/nvim-cmp",
         event = "InsertEnter",
+        cond = function()
+            return #vim.api.nvim_list_uis() > 0
+        end,
         dependencies = {
             "hrsh7th/cmp-buffer",
             "hrsh7th/cmp-path",
@@ -99,6 +116,10 @@ return {
                 auto_install = true,
                 highlight = {
                     enable = true,
+                    disable = function(_, buf)
+                        local ft = vim.bo[buf].filetype
+                        return ft == 'AiChat' or ft == 'AiInput' or ft == 'AiTopbar'
+                    end,
                     additional_vim_regex_highlighting = false,
                 },
                 indent = { enable = false },
